@@ -98,8 +98,7 @@ jboolean XposedBridge_initNative(JNIEnv* env, jclass clazz) {
         return false;
     }
 
-    methodXResourcesTranslateResId = env->GetStaticMethodID(classXResources, "translateResId",
-        "(ILandroid/content/res/XResources;Landroid/content/res/Resources;)I");
+    methodXResourcesTranslateResId = env->GetStaticMethodID(classXResources, "translateResId","(ILandroid/content/res/XResources;Landroid/content/res/Resources;)I");
     if (methodXResourcesTranslateResId == NULL) {
         ALOGE("ERROR: could not find method %s.translateResId(int, Resources, Resources)", CLASS_XRESOURCES);
         logExceptionStackTrace();
@@ -107,8 +106,7 @@ jboolean XposedBridge_initNative(JNIEnv* env, jclass clazz) {
         return false;
     }
 
-    methodXResourcesTranslateAttrId = env->GetStaticMethodID(classXResources, "translateAttrId",
-        "(Ljava/lang/String;Landroid/content/res/XResources;)I");
+    methodXResourcesTranslateAttrId = env->GetStaticMethodID(classXResources, "translateAttrId","(Ljava/lang/String;Landroid/content/res/XResources;)I");
     if (methodXResourcesTranslateAttrId == NULL) {
         ALOGE("ERROR: could not find method %s.findAttrId(String, Resources, Resources)", CLASS_XRESOURCES);
         logExceptionStackTrace();
@@ -149,8 +147,7 @@ jboolean XposedBridge_initNative(JNIEnv* env, jclass clazz) {
     return true;
 }
 
-void XResources_rewriteXmlReferencesNative(JNIEnv* env, jclass clazz,
-            jlong parserPtr, jobject origRes, jobject repRes) {
+void XResources_rewriteXmlReferencesNative(JNIEnv* env, jclass clazz,jlong parserPtr, jobject origRes, jobject repRes) {
 
     using namespace android;
 
@@ -282,7 +279,10 @@ jbyteArray ZygoteService_readFile(JNIEnv* env, jclass clazz, jstring filenameJ) 
 ////////////////////////////////////////////////////////////
 // JNI methods registrations
 ////////////////////////////////////////////////////////////
-
+/**
+ * #define NATIVE_METHOD(className, functionName, signature)  { #functionName, signature, reinterpret_cast<void*>(className ## _ ## functionName) }
+ *
+ */
 int register_natives_XposedBridge(JNIEnv* env, jclass clazz) {
     const JNINativeMethod methods[] = {
         NATIVE_METHOD(XposedBridge, getStartClassName, "()Ljava/lang/String;"),
@@ -292,8 +292,7 @@ int register_natives_XposedBridge(JNIEnv* env, jclass clazz) {
         NATIVE_METHOD(XposedBridge, initNative, "()Z"),
         NATIVE_METHOD(XposedBridge, hookMethodNative, "(Ljava/lang/reflect/Member;Ljava/lang/Class;ILjava/lang/Object;)V"),
 #ifdef ART_TARGET
-        NATIVE_METHOD(XposedBridge, invokeOriginalMethodNative,
-            "(Ljava/lang/reflect/Member;I[Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;"),
+        NATIVE_METHOD(XposedBridge, invokeOriginalMethodNative,"(Ljava/lang/reflect/Member;I[Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;"),
 #endif
         NATIVE_METHOD(XposedBridge, setObjectClassNative, "(Ljava/lang/Object;Ljava/lang/Class;)V"),
         NATIVE_METHOD(XposedBridge, dumpObjectNative, "(Ljava/lang/Object;)V"),

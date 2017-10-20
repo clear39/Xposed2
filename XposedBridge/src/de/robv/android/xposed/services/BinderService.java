@@ -158,8 +158,9 @@ public final class BinderService extends BaseService {
 
 	private BinderService(int target) {
 		IBinder binder = ServiceManager.getService(SERVICE_NAMES[target]);
-		if (binder == null)
+		if (binder == null){
 			throw new IllegalStateException("Service " + SERVICE_NAMES[target] + " does not exist");
+		}
 		this.mRemote = binder;
 	}
 }

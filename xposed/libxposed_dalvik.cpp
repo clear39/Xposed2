@@ -74,7 +74,7 @@ void onVmCreated(JNIEnv* env) {
     prepareSubclassReplacement(classXTypedArray);
 
     /**
-     * xposed/libxposed_common.h:14:#define CLASS_XPOSED_BRIDGE  "de/robv/android/xposed/XposedBridge"
+     * xposed/libxposed_common.h:14:		#define CLASS_XPOSED_BRIDGE  "de/robv/android/xposed/XposedBridge"
      */
     classXposedBridge = env->FindClass(CLASS_XPOSED_BRIDGE);
     classXposedBridge = reinterpret_cast<jclass>(env->NewGlobalRef(classXposedBridge));
@@ -87,6 +87,9 @@ void onVmCreated(JNIEnv* env) {
     }
 
     ALOGI("Found Xposed class '%s', now initializing", CLASS_XPOSED_BRIDGE);
+    /**
+     * xposed/libxposed_common.cpp:286
+     */
     if (register_natives_XposedBridge(env, classXposedBridge) != JNI_OK) {
         ALOGE("Could not register natives for '%s'", CLASS_XPOSED_BRIDGE);
         dvmLogExceptionStackTrace();
@@ -178,8 +181,10 @@ inline bool isMethodHooked(const Method* method) {
 ////////////////////////////////////////////////////////////
 
 jboolean callback_XposedBridge_initNative(JNIEnv* env) {
-    xposedHandleHookedMethod = (Method*) env->GetStaticMethodID(classXposedBridge, "handleHookedMethod",
-        "(Ljava/lang/reflect/Member;ILjava/lang/Object;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+	/**
+	 * 获取XposedBridge中handleHookedMethod 方法
+	 */
+    xposedHandleHookedMethod = (Method*) env->GetStaticMethodID(classXposedBridge, "handleHookedMethod","(Ljava/lang/reflect/Member;ILjava/lang/Object;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
     if (xposedHandleHookedMethod == NULL) {
         ALOGE("ERROR: could not find method %s.handleHookedMethod(Member, int, Object, Object, Object[])", CLASS_XPOSED_BRIDGE);
         dvmLogExceptionStackTrace();
@@ -187,15 +192,22 @@ jboolean callback_XposedBridge_initNative(JNIEnv* env) {
         return false;
     }
 
-    Method* xposedInvokeOriginalMethodNative = (Method*) env->GetStaticMethodID(classXposedBridge, "invokeOriginalMethodNative",
-        "(Ljava/lang/reflect/Member;I[Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+    /**
+     * 获取XposedBridge中invokeOriginalMethodNative 方法
+     */
+    Method* xposedInvokeOriginalMethodNative = (Method*) env->GetStaticMethodID(classXposedBridge, "invokeOriginalMethodNative","(Ljava/lang/reflect/Member;I[Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
     if (xposedInvokeOriginalMethodNative == NULL) {
         ALOGE("ERROR: could not find method %s.invokeOriginalMethodNative(Member, int, Class[], Class, Object, Object[])", CLASS_XPOSED_BRIDGE);
         dvmLogExceptionStackTrace();
         env->ExceptionClear();
         return false;
     }
+
+    /**
+     * 用XposedBridge_invokeOriginalMethodNative替换掉xposedInvokeOriginalMethodNative函数
+     */
     dvmSetNativeFunc(xposedInvokeOriginalMethodNative, XposedBridge_invokeOriginalMethodNative, NULL);
+
 
     objectArrayClass = dvmFindArrayClass("[Ljava/lang/Object;", NULL);
     if (objectArrayClass == NULL) {
@@ -274,8 +286,7 @@ void hookedMethodCallback(const u4* args, JValue* pResult, const Method* method,
 
     // call the Java handler function
     JValue result;
-    dvmCallMethod(self, xposedHandleHookedMethod, NULL, &result,
-        originalReflected, (int) original, additionalInfo, thisObject, argsArray);
+    dvmCallMethod(self, xposedHandleHookedMethod, NULL, &result,originalReflected, (int) original, additionalInfo, thisObject, argsArray);
 
     dvmReleaseTrackedAlloc(argsArray, self);
 
@@ -301,8 +312,7 @@ void hookedMethodCallback(const u4* args, JValue* pResult, const Method* method,
 }
 
 
-void XposedBridge_hookMethodNative(JNIEnv* env, jclass clazz, jobject reflectedMethodIndirect,
-            jobject declaredClassIndirect, jint slot, jobject additionalInfoIndirect) {
+void XposedBridge_hookMethodNative(JNIEnv* env, jclass clazz, jobject reflectedMethodIndirect,jobject declaredClassIndirect, jint slot, jobject additionalInfoIndirect) {
     // Usage errors?
     if (declaredClassIndirect == NULL || reflectedMethodIndirect == NULL) {
         dvmThrowIllegalArgumentException("method and declaredClass must not be null");
@@ -351,8 +361,7 @@ void XposedBridge_hookMethodNative(JNIEnv* env, jclass clazz, jobject reflectedM
  * Simplified copy of Method.invokeNative(), but calls the original (non-hooked) method
  * and has no access checks. Used to call the real implementation of hooked methods.
  */
-void XposedBridge_invokeOriginalMethodNative(const u4* args, JValue* pResult,
-            const Method* method, ::Thread* self) {
+void XposedBridge_invokeOriginalMethodNative(const u4* args, JValue* pResult,const Method* method, ::Thread* self) {
     Method* meth = (Method*) args[1];
     if (meth == NULL) {
         meth = dvmGetMethodFromReflectObj((Object*) args[0]);

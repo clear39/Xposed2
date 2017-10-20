@@ -39,15 +39,16 @@ extern void logExceptionStackTrace();
 extern jboolean callback_XposedBridge_initNative(JNIEnv* env);
 
 extern jint    XposedBridge_getRuntime(JNIEnv* env, jclass clazz);
-extern void    XposedBridge_hookMethodNative(JNIEnv* env, jclass clazz, jobject reflectedMethodIndirect,
-                                             jobject declaredClassIndirect, jint slot, jobject additionalInfoIndirect);
+extern void    XposedBridge_hookMethodNative(JNIEnv* env, jclass clazz, jobject reflectedMethodIndirect,jobject declaredClassIndirect, jint slot, jobject additionalInfoIndirect);
 extern void    XposedBridge_setObjectClassNative(JNIEnv* env, jclass clazz, jobject objIndirect, jclass clzIndirect);
 extern jobject XposedBridge_cloneToSubclassNative(JNIEnv* env, jclass clazz, jobject objIndirect, jclass clzIndirect);
+/**
+ * xposed/libxposed_dalvik.cpp:384
+ */
 extern void    XposedBridge_dumpObjectNative(JNIEnv* env, jclass clazz, jobject objIndirect);
 
 #ifdef ART_TARGET
-extern jobject XposedBridge_invokeOriginalMethodNative(JNIEnv* env, jclass, jobject javaMethod,
-    jint, jobjectArray, jclass, jobject javaReceiver, jobjectArray javaArgs);
+extern jobject XposedBridge_invokeOriginalMethodNative(JNIEnv* env, jclass, jobject javaMethod,jint, jobjectArray, jclass, jobject javaReceiver, jobjectArray javaArgs);
 #endif
 
 }  // namespace xposed

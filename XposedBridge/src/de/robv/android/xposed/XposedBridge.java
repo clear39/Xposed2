@@ -92,6 +92,9 @@ public final class XposedBridge {
 
             runtime = getRuntime();
             if (initNative()) {
+            	/**
+            	 * 获取xposed版本
+            	 */
                 XPOSED_BRIDGE_VERSION = getXposedVersion();
                 if (isZygote) {
                     startsSystemServer = startsSystemServer();
@@ -109,10 +112,11 @@ public final class XposedBridge {
         }
 
         // Call the original startup code
-        if (isZygote)
+        if (isZygote){
             ZygoteInit.main(args);
-        else
+        }else{
             RuntimeInit.main(args);
+        }
     }
 
     protected static class ToolEntryPoint {
@@ -132,6 +136,10 @@ public final class XposedBridge {
 
     private static native int getRuntime();
 
+    /**
+     * 判断是否启动SystemServer
+     * @return
+     */
     private static native boolean startsSystemServer();
 
     /**
@@ -148,43 +156,30 @@ public final class XposedBridge {
 
         // normal process initialization (for new Activity, Service,
         // BroadcastReceiver etc.)
-        findAndHookMethod(ActivityThread.class, "handleBindApplication",
-                "android.app.ActivityThread.AppBindData", new XC_MethodHook() {
-                    protected void beforeHookedMethod(MethodHookParam param)
-                            throws Throwable {
+        findAndHookMethod(ActivityThread.class, "handleBindApplication","android.app.ActivityThread.AppBindData", new XC_MethodHook() {
+                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                         ActivityThread activityThread = (ActivityThread) param.thisObject;
-                        ApplicationInfo appInfo = (ApplicationInfo) getObjectField(
-                                param.args[0], "appInfo");
-                        String reportedPackageName = appInfo.packageName.equals(
-                                "android") ? "system" : appInfo.packageName;
+                        ApplicationInfo appInfo = (ApplicationInfo) getObjectField(param.args[0], "appInfo");
+                        String reportedPackageName = appInfo.packageName.equals("android") ? "system" : appInfo.packageName;
                         SELinuxHelper.initForProcess(reportedPackageName);
-                        ComponentName instrumentationName = (ComponentName) getObjectField(
-                                param.args[0], "instrumentationName");
+                        ComponentName instrumentationName = (ComponentName) getObjectField(param.args[0], "instrumentationName");
                         if (instrumentationName != null) {
-                            XposedBridge
-                                    .log("Instrumentation detected, disabling framework for "
-                                            + reportedPackageName);
+                            XposedBridge.log("Instrumentation detected, disabling framework for " + reportedPackageName);
                             disableHooks = true;
                             return;
                         }
-                        CompatibilityInfo compatInfo = (CompatibilityInfo) getObjectField(
-                                param.args[0], "compatInfo");
+                        CompatibilityInfo compatInfo = (CompatibilityInfo) getObjectField(param.args[0], "compatInfo");
                         if (appInfo.sourceDir == null)
                             return;
 
-                        setObjectField(activityThread, "mBoundApplication",
-                                param.args[0]);
+                        setObjectField(activityThread, "mBoundApplication",param.args[0]);
                         loadedPackagesInProcess.add(reportedPackageName);
-                        LoadedApk loadedApk = activityThread
-                                .getPackageInfoNoCheck(appInfo, compatInfo);
-                        XResources.setPackageNameForResDir(appInfo.packageName,
-                                loadedApk.getResDir());
+                        LoadedApk loadedApk = activityThread.getPackageInfoNoCheck(appInfo, compatInfo);
+                        XResources.setPackageNameForResDir(appInfo.packageName,loadedApk.getResDir());
 
-                        LoadPackageParam lpparam = new LoadPackageParam(
-                                sLoadedPackageCallbacks);
+                        LoadPackageParam lpparam = new LoadPackageParam(sLoadedPackageCallbacks);
                         lpparam.packageName = reportedPackageName;
-                        lpparam.processName = (String) getObjectField(
-                                param.args[0], "processName");
+                        lpparam.processName = (String) getObjectField(param.args[0], "processName");
                         lpparam.classLoader = loadedApk.getClassLoader();
                         lpparam.appInfo = appInfo;
                         lpparam.isFirstApplication = true;
@@ -197,17 +192,13 @@ public final class XposedBridge {
 
         // system_server initialization
         if (Build.VERSION.SDK_INT < 21) {
-            findAndHookMethod("com.android.server.ServerThread", null,
-                    Build.VERSION.SDK_INT < 19 ? "run" : "initAndLoop",
+            findAndHookMethod("com.android.server.ServerThread", null,Build.VERSION.SDK_INT < 19 ? "run" : "initAndLoop",
                     new XC_MethodHook() {
                         @Override
-                        protected void beforeHookedMethod(MethodHookParam param)
-                                throws Throwable {
+                        protected void beforeHookedMethod(MethodHookParam param)throws Throwable {
                             SELinuxHelper.initForProcess("android");
                             loadedPackagesInProcess.add("android");
-
-                            LoadPackageParam lpparam = new LoadPackageParam(
-                                    sLoadedPackageCallbacks);
+                            LoadPackageParam lpparam = new LoadPackageParam(sLoadedPackageCallbacks);
                             lpparam.packageName = "android";
                             lpparam.processName = "android"; // it's actually
                                                              // system_server, but other
@@ -220,11 +211,9 @@ public final class XposedBridge {
                         }
                     });
         } else if (startsSystemServer) {
-            findAndHookMethod(ActivityThread.class, "systemMain",
-                    new XC_MethodHook() {
+            findAndHookMethod(ActivityThread.class, "systemMain",new XC_MethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param)
-                                throws Throwable {
+                        protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                             final ClassLoader cl = Thread.currentThread()
                                     .getContextClassLoader();
                             findAndHookMethod("com.android.server.SystemServer",
@@ -291,8 +280,7 @@ public final class XposedBridge {
                         "mIncludeCode") == false)
                     return;
 
-                LoadPackageParam lpparam = new LoadPackageParam(
-                        sLoadedPackageCallbacks);
+                LoadPackageParam lpparam = new LoadPackageParam(sLoadedPackageCallbacks);
                 lpparam.packageName = packageName;
                 lpparam.processName = AndroidAppHelper.currentProcessName();
                 lpparam.classLoader = loadedApk.getClassLoader();
@@ -315,12 +303,10 @@ public final class XposedBridge {
                     }
                 });
 
-        if (!SELinuxHelper.getAppDataFileService()
-                .checkFileExists(BASE_DIR + "conf/disable_resources")) {
+        if (!SELinuxHelper.getAppDataFileService().checkFileExists(BASE_DIR + "conf/disable_resources")) {
             hookResources();
         } else {
-            Log.w(TAG, "Found " + BASE_DIR
-                    + "conf/disable_resources, not hooking resources");
+            Log.w(TAG, "Found " + BASE_DIR + "conf/disable_resources, not hooking resources");
             disableResources = true;
         }
     }
@@ -625,19 +611,13 @@ public final class XposedBridge {
      *            The method to be hooked
      * @param callback
      */
-    public static XC_MethodHook.Unhook hookMethod(Member hookMethod,
-            XC_MethodHook callback) {
-        if (!(hookMethod instanceof Method)
-                && !(hookMethod instanceof Constructor<?>)) {
-            throw new IllegalArgumentException(
-                    "Only methods and constructors can be hooked: "
-                            + hookMethod.toString());
+    public static XC_MethodHook.Unhook hookMethod(Member hookMethod,XC_MethodHook callback) {
+        if (!(hookMethod instanceof Method) && !(hookMethod instanceof Constructor<?>)) {
+            throw new IllegalArgumentException("Only methods and constructors can be hooked: "  + hookMethod.toString());
         } else if (hookMethod.getDeclaringClass().isInterface()) {
-            throw new IllegalArgumentException(
-                    "Cannot hook interfaces: " + hookMethod.toString());
+            throw new IllegalArgumentException("Cannot hook interfaces: " + hookMethod.toString());
         } else if (Modifier.isAbstract(hookMethod.getModifiers())) {
-            throw new IllegalArgumentException(
-                    "Cannot hook abstract methods: " + hookMethod.toString());
+            throw new IllegalArgumentException("Cannot hook abstract methods: " + hookMethod.toString());
         }
 
         boolean newMethod = false;
@@ -653,22 +633,18 @@ public final class XposedBridge {
         callbacks.add(callback);
         if (newMethod) {
             Class<?> declaringClass = hookMethod.getDeclaringClass();
-            int slot = (runtime == RUNTIME_DALVIK)
-                    ? (int) getIntField(hookMethod, "slot") : 0;
-
+            int slot = (runtime == RUNTIME_DALVIK) ? (int) getIntField(hookMethod, "slot") : 0;
             Class<?>[] parameterTypes;
             Class<?> returnType;
             if (hookMethod instanceof Method) {
                 parameterTypes = ((Method) hookMethod).getParameterTypes();
                 returnType = ((Method) hookMethod).getReturnType();
             } else {
-                parameterTypes = ((Constructor<?>) hookMethod)
-                        .getParameterTypes();
+                parameterTypes = ((Constructor<?>) hookMethod).getParameterTypes();
                 returnType = null;
             }
 
-            AdditionalHookInfo additionalInfo = new AdditionalHookInfo(
-                    callbacks, parameterTypes, returnType);
+            AdditionalHookInfo additionalInfo = new AdditionalHookInfo(callbacks, parameterTypes, returnType);
             hookMethodNative(hookMethod, declaringClass, slot, additionalInfo);
         }
 
