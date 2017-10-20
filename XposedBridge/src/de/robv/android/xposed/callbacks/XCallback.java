@@ -7,6 +7,9 @@ import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedBridge.CopyOnWriteSortedSet;
 
 public abstract class XCallback implements Comparable<XCallback> {
+	/**
+	 * 优先级
+	 */
 	public final int priority;
 
 	public XCallback() {

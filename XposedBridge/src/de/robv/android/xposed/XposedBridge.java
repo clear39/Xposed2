@@ -168,9 +168,11 @@ public final class XposedBridge {
                             disableHooks = true;
                             return;
                         }
+                        
                         CompatibilityInfo compatInfo = (CompatibilityInfo) getObjectField(param.args[0], "compatInfo");
-                        if (appInfo.sourceDir == null)
+                        if (appInfo.sourceDir == null){
                             return;
+                        }
 
                         setObjectField(activityThread, "mBoundApplication",param.args[0]);
                         loadedPackagesInProcess.add(reportedPackageName);
@@ -226,8 +228,7 @@ public final class XposedBridge {
                                     SELinuxHelper.initForProcess("android");
                                     loadedPackagesInProcess.add("android");
 
-                                    LoadPackageParam lpparam = new LoadPackageParam(
-                                            sLoadedPackageCallbacks);
+                                    LoadPackageParam lpparam = new LoadPackageParam(sLoadedPackageCallbacks);
                                     lpparam.packageName = "android";
                                     lpparam.processName = "android"; // it's actually
                                                                      // system_server,
@@ -953,8 +954,9 @@ public final class XposedBridge {
 
         public synchronized boolean add(E e) {
             int index = indexOf(e);
-            if (index >= 0)
+            if (index >= 0){
                 return false;
+            }
 
             Object[] newElements = new Object[elements.length + 1];
             System.arraycopy(elements, 0, newElements, 0, elements.length);
@@ -971,8 +973,7 @@ public final class XposedBridge {
 
             Object[] newElements = new Object[elements.length - 1];
             System.arraycopy(elements, 0, newElements, 0, index);
-            System.arraycopy(elements, index + 1, newElements, index,
-                    elements.length - index - 1);
+            System.arraycopy(elements, index + 1, newElements, index,elements.length - index - 1);
             elements = newElements;
             return true;
         }
@@ -995,9 +996,7 @@ public final class XposedBridge {
         final Class<?>[]                          parameterTypes;
         final Class<?>                            returnType;
 
-        private AdditionalHookInfo(
-                CopyOnWriteSortedSet<XC_MethodHook> callbacks,
-                Class<?>[] parameterTypes, Class<?> returnType) {
+        private AdditionalHookInfo(CopyOnWriteSortedSet<XC_MethodHook> callbacks,Class<?>[] parameterTypes, Class<?> returnType) {
             this.callbacks = callbacks;
             this.parameterTypes = parameterTypes;
             this.returnType = returnType;

@@ -87,15 +87,21 @@ public final class XposedBridge {
 	 */
 	private static void main(String[] args) {
 		// the class the VM has been created for or null for the Zygote process
+		/** 
+		 * @function Native方法，用于获取当前启动的类名 
+        */
 		String startClassName = getStartClassName();
 
 		// initialize the Xposed framework and modules
+		 // 初始化Xposed框架与模块  
 		try {
 			// initialize log file
+			// 初始化Log文件
 			try {
 				File logFile = new File(BASE_DIR + "log/error.log");
-				if (startClassName == null && logFile.length() > MAX_LOGFILE_SIZE)
+				if (startClassName == null && logFile.length() > MAX_LOGFILE_SIZE){
 					logFile.renameTo(new File(BASE_DIR + "log/error.log.old"));
+				}
 				logWriter = new PrintWriter(new FileWriter(logFile, true));
 				logFile.setReadable(true, false);
 				logFile.setWritable(true, false);
@@ -103,20 +109,30 @@ public final class XposedBridge {
 
 			String date = DateFormat.getDateTimeInstance().format(new Date());
 			determineXposedVersion();
-			log("-----------------\n" + date + " UTC\n"
-					+ "Loading Xposed v" + XPOSED_BRIDGE_VERSION
-					+ " (for " + (startClassName == null ? "Zygote" : startClassName) + ")...");
+			log("-----------------\n" + date + " UTC\n" + "Loading Xposed v" + XPOSED_BRIDGE_VERSION + " (for " + (startClassName == null ? "Zygote" : startClassName) + ")...");
 			if (startClassName == null) {
 				// Zygote
 				log("Running ROM '" + Build.DISPLAY + "' with fingerprint '" + Build.FINGERPRINT + "'");
 			}
 
+			/** 
+            @function 负责获取XposedBridge中Java函数的引用 
+            @description Native函数，定义于xposed.cpp中 
+            */
 			if (initNative()) {
 				if (startClassName == null) {
 					// Initializations for Zygote
+					/** 
+	                @function 如果是启动Zygote进程，则执行initXbridgeZygote函数 
+	                @description 定义在XposedBridge类中 
+	                */
 					initXbridgeZygote();
 				}
 
+				/** 
+                @function 负责加载所有模块 
+                @description 定义在XposedBridge类中 
+                */
 				loadModules(startClassName);
 			} else {
 				log("Errors during native Xposed initialization");
@@ -128,6 +144,7 @@ public final class XposedBridge {
 		}
 
 		// call the original startup code
+		// 调用原来的启动参数 
 		if (startClassName == null)
 			ZygoteInit.main(args);
 		else
@@ -180,6 +197,13 @@ public final class XposedBridge {
 		final HashSet<String> loadedPackagesInProcess = new HashSet<String>(1);
 
 		// normal process initialization (for new Activity, Service, BroadcastReceiver etc.)
+		/** 
+        @function 执行Hook替换操作 
+        @para ActivityThread.class 需要hook的函数所在的类； 
+        @para "handleBindApplication" 需要hook的函数名 
+        @para  "android.app.ActivityThread.AppBindData" 不定参数 
+        @description 定义在XposedHelper中 
+        */  
 		findAndHookMethod(ActivityThread.class, "handleBindApplication", "android.app.ActivityThread.AppBindData", new XC_MethodHook() {
 			protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
 				ActivityThread activityThread = (ActivityThread) param.thisObject;

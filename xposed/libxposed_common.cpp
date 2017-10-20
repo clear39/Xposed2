@@ -81,9 +81,17 @@ jboolean XposedBridge_initNative(JNIEnv* env, jclass clazz) {
         return false;
     }
 
+    /**
+     *xposed/libxposed_art.cpp:95
+     *
+     *xposed/libxposed_dalvik.cpp:183
+     */
     if (!callback_XposedBridge_initNative(env))
         return false;
 
+    /*
+     * xposed/libxposed_common.h:15 #define CLASS_XRESOURCES     "android/content/res/XResources"
+     */
     classXResources = env->FindClass(CLASS_XRESOURCES);
     classXResources = reinterpret_cast<jclass>(env->NewGlobalRef(classXResources));
     if (classXResources == NULL) {
@@ -114,6 +122,9 @@ jboolean XposedBridge_initNative(JNIEnv* env, jclass clazz) {
         return false;
     }
 
+    /**
+     * xposed/libxposed_common.h:18:    #define CLASS_ZYGOTE_SERVICE "de/robv/android/xposed/services/ZygoteService"
+     */
     jclass zygoteServiceClass = env->FindClass(CLASS_ZYGOTE_SERVICE);
     if (zygoteServiceClass == NULL) {
         ALOGE("Error while loading ZygoteService class '%s':", CLASS_ZYGOTE_SERVICE);
@@ -121,12 +132,17 @@ jboolean XposedBridge_initNative(JNIEnv* env, jclass clazz) {
         env->ExceptionClear();
         return false;
     }
+
+
     if (register_natives_ZygoteService(env, zygoteServiceClass) != JNI_OK) {
         ALOGE("Could not register natives for '%s'", CLASS_ZYGOTE_SERVICE);
         env->ExceptionClear();
         return false;
     }
 
+    /*
+     * xposed/libxposed_common.h:19:#define CLASS_FILE_RESULT    "de/robv/android/xposed/services/FileResult"
+     */
     classFileResult = env->FindClass(CLASS_FILE_RESULT);
     classFileResult = reinterpret_cast<jclass>(env->NewGlobalRef(classFileResult));
     if (classFileResult == NULL) {
@@ -166,10 +182,7 @@ void XResources_rewriteXmlReferencesNative(JNIEnv* env, jclass clazz,jlong parse
                 tag = (ResXMLTree_attrExt*)parser->mCurExt;
                 attrCount = dtohs(tag->attributeCount);
                 for (int idx = 0; idx < attrCount; idx++) {
-                    ResXMLTree_attribute* attr = (ResXMLTree_attribute*)
-                        (((const uint8_t*)tag)
-                         + dtohs(tag->attributeStart)
-                         + (dtohs(tag->attributeSize)*idx));
+                    ResXMLTree_attribute* attr = (ResXMLTree_attribute*) (((const uint8_t*)tag) + dtohs(tag->attributeStart)  + (dtohs(tag->attributeSize)*idx));
 
                     // find resource IDs for attribute names
                     int32_t attrNameID = parser->getAttributeNameID(idx);
@@ -177,8 +190,7 @@ void XResources_rewriteXmlReferencesNative(JNIEnv* env, jclass clazz,jlong parse
                     if (attrNameID >= 0 && (size_t)attrNameID < mTree.mNumResIds && dtohl(mResIds[attrNameID]) >= 0x7f000000) {
                         size_t attNameLen;
                         const char16_t* attrName = mTree.mStrings.stringAt(attrNameID, &attNameLen);
-                        jint attrResID = env->CallStaticIntMethod(classXResources, methodXResourcesTranslateAttrId,
-                            env->NewString((const jchar*)attrName, attNameLen), origRes);
+                        jint attrResID = env->CallStaticIntMethod(classXResources, methodXResourcesTranslateAttrId,env->NewString((const jchar*)attrName, attNameLen), origRes);
                         if (env->ExceptionCheck())
                             goto leave;
 
@@ -193,8 +205,7 @@ void XResources_rewriteXmlReferencesNative(JNIEnv* env, jclass clazz,jlong parse
                     if (oldValue < 0x7f000000)
                         continue;
 
-                    jint newValue = env->CallStaticIntMethod(classXResources, methodXResourcesTranslateResId,
-                        oldValue, origRes, repRes);
+                    jint newValue = env->CallStaticIntMethod(classXResources, methodXResourcesTranslateResId,oldValue, origRes, repRes);
                     if (env->ExceptionCheck())
                         goto leave;
 

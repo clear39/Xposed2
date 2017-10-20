@@ -812,8 +812,7 @@ public class ClassUtils {
      * @return the class represented by {@code className} using the {@code classLoader}
      * @throws ClassNotFoundException if the class is not found
      */
-    public static Class<?> getClass(
-            ClassLoader classLoader, String className, boolean initialize) throws ClassNotFoundException {
+    public static Class<?> getClass(ClassLoader classLoader, String className, boolean initialize) throws ClassNotFoundException {
         try {
             Class<?> clazz;
             if (abbreviationMap.containsKey(className)) {
